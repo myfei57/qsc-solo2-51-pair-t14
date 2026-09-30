@@ -80,3 +80,26 @@ class UnknownKeyError(ContractError):
 
 class StoreError(ContractError):
     """Raised when the file-backed store cannot persist a write."""
+
+
+class TopologyError(ContractError):
+    """Base class for equipment topology registry violations."""
+
+
+class TopologyValidationError(TopologyError):
+    """Raised when a topology batch fails validation.
+
+    Carries every violation so the console can report the whole conclusion.
+    """
+
+    def __init__(self, violations: list[str] | tuple[str, ...]) -> None:
+        self.violations = tuple(violations)
+        super().__init__("; ".join(self.violations))
+
+
+class TopologyNotFoundError(TopologyError):
+    """Raised when a topology id is referenced but not registered."""
+
+
+class TopologyPermissionError(TopologyError):
+    """Raised when an actor lacks the permission to rename a tag."""

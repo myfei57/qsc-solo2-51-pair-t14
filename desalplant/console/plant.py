@@ -33,6 +33,7 @@ from ..tank.handoff import handoff
 from ..tank.level import Level
 from ..tank.product import ProductTank
 from ..tank.tanks import TankSet
+from ..topology.service import TopologyService
 from . import alarms, audit_report, integration, probes, reports, summary, telemetry, version
 from .version import BuildInfo
 
@@ -76,6 +77,7 @@ class Plant:
         self.product = ProductTank()
         self.level = Level()
         self.brine_stream = BrineStream(concentration=0.6)
+        self.topology = TopologyService(store, clock, recorder)
 
     # ------------------------------------------------------------- lifecycle
 

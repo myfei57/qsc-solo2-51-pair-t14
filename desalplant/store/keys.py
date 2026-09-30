@@ -9,6 +9,9 @@ AUDIT_SEQUENCE = "audit/sequence"
 AUDIT_EVENT_PREFIX = "audit/event/"
 AUDIT_LAST_PREFIX = "audit/last/"
 
+TOPOLOGY_STATE = "topology/state"
+TOPOLOGY_MIGRATION_PREFIX = "topology/migration/"
+
 
 def audit_event_key(sequence: int) -> str:
     """Key holding the event written at ``sequence``."""
@@ -20,3 +23,10 @@ def audit_event_key(sequence: int) -> str:
 def audit_last_key(kind: str) -> str:
     """Key holding the sequence of the latest event of ``kind``."""
     return f"{AUDIT_LAST_PREFIX}{kind}"
+
+
+def topology_migration_key(version: int) -> str:
+    """Key holding the rename migration recorded at ``version``."""
+    if version < 1:
+        raise ValueError("migration version starts at one")
+    return f"{TOPOLOGY_MIGRATION_PREFIX}{version:06d}"

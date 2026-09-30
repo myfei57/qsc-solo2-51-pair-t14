@@ -105,6 +105,36 @@ def version(console, request: Request) -> Response:
     return json_response({"label": console.plant.build().label()})
 
 
+def topology(console, request: Request) -> Response:
+    """Current topology with its version."""
+    return json_response(console.plant.topology.current())
+
+
+def topology_points(console, request: Request) -> Response:
+    """Registered measurement points."""
+    return json_response({"points": console.plant.topology.points()})
+
+
+def topology_equipment(console, request: Request) -> Response:
+    """Registered equipment."""
+    return json_response({"equipment": console.plant.topology.equipment()})
+
+
+def topology_migrations(console, request: Request) -> Response:
+    """Immutable migration history."""
+    return json_response({"migrations": console.plant.topology.migrations()})
+
+
+def topology_resolve(console, request: Request) -> Response:
+    """Resolve a tag at a version, following the rename chain."""
+    tag = request.param("id", "")
+    if "at_version" in request.query:
+        body = console.plant.topology.resolve(tag, request.integer("at_version", 0))
+    else:
+        body = console.plant.topology.resolve(tag)
+    return json_response(body)
+
+
 ROUTE_TABLE = (
     (routes.HEALTH, health),
     (routes.STATUS, status),
@@ -125,4 +155,9 @@ ROUTE_TABLE = (
     (routes.SUMMARY, summary),
     (routes.SELFTEST, selftest),
     (routes.VERSION, version),
+    (routes.TOPOLOGY, topology),
+    (routes.TOPOLOGY_POINTS, topology_points),
+    (routes.TOPOLOGY_EQUIPMENT, topology_equipment),
+    (routes.TOPOLOGY_MIGRATIONS, topology_migrations),
+    (routes.TOPOLOGY_RESOLVE, topology_resolve),
 )

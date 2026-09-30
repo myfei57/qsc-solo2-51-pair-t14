@@ -19,6 +19,9 @@ from ..errors import (
     RinseFailedError,
     StoreError,
     SupplyInterruptedError,
+    TopologyNotFoundError,
+    TopologyPermissionError,
+    TopologyValidationError,
     TransferFailedError,
     UnknownKeyError,
     ValveNotOpenError,
@@ -44,8 +47,9 @@ CONFLICT = (
     RinseFailedError,
     MediaNotReadyError,
 )
-MALFORMED = (InvalidEfficiencyError, InvalidStagesError)
-MISSING = (UnknownKeyError,)
+MALFORMED = (InvalidEfficiencyError, InvalidStagesError, TopologyValidationError)
+MISSING = (UnknownKeyError, TopologyNotFoundError)
+FORBIDDEN = (TopologyPermissionError,)
 
 ROUTES: tuple[tuple[str, str, Handler], ...] = (
     *((method, path, handler) for path, handler in handlers.ROUTE_TABLE for method in ("GET",)),
@@ -53,6 +57,9 @@ ROUTES: tuple[tuple[str, str, Handler], ...] = (
     ("POST", routes.SHUTDOWN, operations.shutdown),
     ("POST", routes.SWITCH, operations.switch),
     ("POST", routes.MAINTAIN, operations.maintain),
+    ("POST", routes.TOPOLOGY_VALIDATE, operations.topology_validate),
+    ("POST", routes.TOPOLOGY_APPLY, operations.topology_apply),
+    ("POST", routes.TOPOLOGY_RENAME, operations.topology_rename),
 )
 
 
@@ -60,6 +67,8 @@ def status_for(error: ContractError) -> int:
     """Map a contract violation onto a response status."""
     if isinstance(error, CONFLICT):
         return 409
+    if isinstance(error, FORBIDDEN):
+        return 403
     if isinstance(error, MALFORMED):
         return 422
     if isinstance(error, MISSING):
