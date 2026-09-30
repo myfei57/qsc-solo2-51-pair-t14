@@ -16,9 +16,16 @@ class Request:
     path: str
     query: Mapping[str, str]
     body_text: str = ""
+    headers: Mapping[str, str] | None = None
 
     @classmethod
-    def parse(cls, method: str, target: str, body_text: str = "") -> "Request":
+    def parse(
+        cls,
+        method: str,
+        target: str,
+        body_text: str = "",
+        headers: Mapping[str, str] | None = None,
+    ) -> "Request":
         """Build a request from a method, a target and an optional body."""
         split = urlsplit(target)
         raw = parse_qs(split.query, keep_blank_values=True)
@@ -28,6 +35,7 @@ class Request:
             path=split.path or "/",
             query=query,
             body_text=body_text,
+            headers=dict(headers or {}),
         )
 
     def param(self, name: str, default: str | None = None) -> str | None:
@@ -59,6 +67,14 @@ class Request:
         if not isinstance(decoded, dict):
             raise ValueError("request body has to be a JSON object")
         return decoded
+
+    def header(self, name: str, default: str = "") -> str:
+        """Read a case-insensitive request header."""
+        wanted = name.lower()
+        for key, value in (self.headers or {}).items():
+            if key.lower() == wanted:
+                return value
+        return default
 
 
 @dataclass(frozen=True)

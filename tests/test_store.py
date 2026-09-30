@@ -71,6 +71,21 @@ def test_snapshot_reports_count_and_digest(store):
     assert build({"a": 1}, "missing").count == 0
 
 
+def test_update_rolls_back_when_the_batch_flush_fails(tmp_path):
+    path = tmp_path / "plant.json"
+    store = Store(str(path))
+    store.put("a", 1)
+    (tmp_path / "plant.json.tmp").mkdir()
+
+    def add_key(data):
+        data["b"] = 2
+
+    with pytest.raises(StoreError):
+        store.update(add_key)
+    assert store.get("b") is None
+    assert store.count() == 1
+
+
 def test_store_persists_across_instances(tmp_path):
     path = str(tmp_path / "plant.json")
     first = Store(path)

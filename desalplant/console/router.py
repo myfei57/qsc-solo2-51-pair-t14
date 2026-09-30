@@ -11,19 +11,24 @@ from ..errors import (
     HandoffIncompleteError,
     InvalidEfficiencyError,
     InvalidStagesError,
+    InvalidTopologyError,
     MediaNotReadyError,
     MembraneCrackedError,
+    PermissionDeniedError,
     PermeateRejectedError,
     PumpAlreadyStoppedError,
     ResidualAntiscalantError,
     RinseFailedError,
     StoreError,
     SupplyInterruptedError,
+    TopologyConflictError,
     TransferFailedError,
     UnknownKeyError,
+    UnknownTopologyError,
     ValveNotOpenError,
 )
 from . import handlers, operations, routes
+from . import topology as topology_handlers
 from .http import Request, Response, error_response
 
 Handler = Callable[["Console", Request], Response]
@@ -43,12 +48,15 @@ CONFLICT = (
     TransferFailedError,
     RinseFailedError,
     MediaNotReadyError,
+    TopologyConflictError,
 )
-MALFORMED = (InvalidEfficiencyError, InvalidStagesError)
-MISSING = (UnknownKeyError,)
+MALFORMED = (InvalidEfficiencyError, InvalidStagesError, InvalidTopologyError)
+MISSING = (UnknownKeyError, UnknownTopologyError)
+FORBIDDEN = (PermissionDeniedError,)
 
 ROUTES: tuple[tuple[str, str, Handler], ...] = (
     *((method, path, handler) for path, handler in handlers.ROUTE_TABLE for method in ("GET",)),
+    *topology_handlers.ROUTE_TABLE,
     ("POST", routes.START, operations.start),
     ("POST", routes.SHUTDOWN, operations.shutdown),
     ("POST", routes.SWITCH, operations.switch),
@@ -64,6 +72,8 @@ def status_for(error: ContractError) -> int:
         return 422
     if isinstance(error, MISSING):
         return 404
+    if isinstance(error, FORBIDDEN):
+        return 403
     if isinstance(error, StoreError):
         return 500
     return 400

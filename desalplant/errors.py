@@ -80,3 +80,24 @@ class UnknownKeyError(ContractError):
 
 class StoreError(ContractError):
     """Raised when the file-backed store cannot persist a write."""
+
+
+class InvalidTopologyError(ContractError):
+    """Raised when a topology batch contains one or more validation failures."""
+
+    def __init__(self, violations: list[dict], event=None) -> None:
+        super().__init__("topology batch validation failed")
+        self.violations = violations
+        self.event = event
+
+
+class TopologyConflictError(ContractError):
+    """Raised when a topology batch is based on a stale version."""
+
+
+class PermissionDeniedError(ContractError):
+    """Raised when a principal is not allowed to change topology."""
+
+
+class UnknownTopologyError(ContractError):
+    """Raised when a topology version or identifier is not registered."""

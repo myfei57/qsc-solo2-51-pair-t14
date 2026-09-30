@@ -23,20 +23,31 @@ class Recorder:
 
     def log(self, kind: str, detail: str) -> Event:
         """Append an event and return it."""
+        return self.append(kind, detail)
+
+    def append(self, kind: str, detail: str, write=None, data=None) -> Event:
+        """Append an event, allowing a caller to join other state into the flush."""
         if not kind:
             raise ValueError("event kind must not be empty")
-        self._sequence += 1
-        tick = self._clock.tick if self._clock is not None else 0
-        event = Event(
-            sequence=self._sequence,
-            kind=kind,
-            detail=detail,
-            tick=tick,
-            id=new_id(),
-        )
-        self._store.put(keys.AUDIT_SEQUENCE, self._sequence)
-        self._store.put(keys.audit_event_key(self._sequence), event.to_dict())
-        self._store.put(keys.audit_last_key(kind), self._sequence)
+
+        def mutate(store_data) -> Event:
+            event = Event(
+                sequence=int(store_data.get(keys.AUDIT_SEQUENCE, 0) or 0) + 1,
+                kind=kind,
+                detail=detail,
+                tick=self._clock.tick if self._clock is not None else 0,
+                id=new_id(),
+                data=data,
+            )
+            store_data[keys.AUDIT_SEQUENCE] = event.sequence
+            store_data[keys.audit_event_key(event.sequence)] = event.to_dict()
+            store_data[keys.audit_last_key(kind)] = event.sequence
+            if write is not None:
+                write(event, store_data)
+            return event
+
+        event = self._store.update(mutate)
+        self._sequence = event.sequence
         return event
 
     def count(self) -> int:

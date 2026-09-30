@@ -22,7 +22,9 @@ class ControlHandler(BaseHTTPRequestHandler):
     def _dispatch(self, method: str) -> None:
         length = int(self.headers.get("Content-Length", "0") or 0)
         body = self.rfile.read(length).decode("utf-8") if length else ""
-        response = self.server.console.handle(Request.parse(method, self.path, body))
+        response = self.server.console.handle(
+            Request.parse(method, self.path, body, dict(self.headers.items()))
+        )
         payload = response.to_bytes()
         self.send_response(response.status)
         self.send_header("Content-Type", JSON_CONTENT_TYPE)

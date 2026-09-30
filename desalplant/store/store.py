@@ -7,6 +7,7 @@ never create the file, which keeps a first run side-effect free.
 
 import os
 import threading
+from copy import deepcopy
 from typing import Any
 
 from ..errors import StoreError, UnknownKeyError
@@ -47,9 +48,21 @@ class Store:
         """Write a key and flush the document."""
         if not key:
             raise StoreError("key must not be empty")
+        self.update(lambda data: data.__setitem__(key, value))
+
+    def update(self, mutate):
+        """Apply several in-memory changes, then flush the document once."""
         with self._lock:
-            self._data[key] = value
-            self.flush()
+            previous_data = self._data
+            next_data = deepcopy(previous_data)
+            result = mutate(next_data)
+            self._data = next_data
+            try:
+                self.flush()
+            except StoreError:
+                self._data = previous_data
+                raise
+            return result
 
     def get(self, key: str, default: Any = None) -> Any:
         """Read a key, returning ``default`` when it was never written."""
